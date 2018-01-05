@@ -1,0 +1,5 @@
+---
+- hosts: proxy:workers:masters
+  become: true
+  roles:
+    - rancher

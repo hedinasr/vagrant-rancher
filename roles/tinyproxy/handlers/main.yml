@@ -1,0 +1,5 @@
+- name: Reload tinyproxy
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: tinyproxy

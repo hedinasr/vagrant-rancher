@@ -1,0 +1,35 @@
+- name: Tinyproxy for Ubuntu server
+  block:
+
+  - name: Install tinyproxy on the proxy server
+    apt:
+      name: tinyproxy
+      state: latest
+
+  - name: Create tinyproxy group
+    group:
+      name: tinyproxy
+      state: present
+
+  - name: Create tinyproxy user
+    user:
+      name: tinyproxy
+      group: tinyproxy
+
+  - name: Ensure tinyproxy is stopped
+    systemd:
+      name: tinyproxy
+      state: stopped
+
+  - name: Templating /etc/tinyproxy.conf
+    template:
+      src: tinyproxy.conf.j2
+      dest: /etc/tinyproxy.conf
+    notify: Reload tinyproxy
+
+  - name: Ensure tinyproxy is running
+    systemd:
+      name: tinyproxy
+      state: started
+
+  when: ansible_distribution == "Ubuntu"

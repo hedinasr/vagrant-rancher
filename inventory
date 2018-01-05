@@ -1,0 +1,24 @@
+[all:vars]
+ansible_user=vagrant
+ansible_ssh_private_key_file=/home/henas/.vagrant.d/insecure_private_key
+#ansible_ssh_pass=vagrant
+
+[all]
+master1 ansible_host=172.16.66.2  vpn_ip=192.168.66.2
+#master2 ansible_host=172.16.66.3  vpn_ip=192.168.66.3
+node1   ansible_host=172.16.66.4  vpn_ip=192.168.66.4
+node2   ansible_host=172.16.66.5  vpn_ip=192.168.66.5
+node3   ansible_host=172.16.66.6  vpn_ip=192.168.66.6
+proxy1  ansible_host=172.16.66.7  vpn_ip=192.168.66.7
+
+[proxy]
+proxy1
+
+[masters]
+master1
+#master2
+
+[workers]
+node1
+node2
+node3

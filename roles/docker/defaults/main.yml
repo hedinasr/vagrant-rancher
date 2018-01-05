@@ -1,0 +1,6 @@
+docker_apt_key: https://download.docker.com/linux/ubuntu/gpg
+docker_apt_repository: https://download.docker.com/linux/ubuntu
+# Choose 'edge' 'stable' or 'testing' for docker channel
+docker_apt_channel: stable
+# Docker daemon config file
+docker_daemon_config: /etc/docker/daemon.json

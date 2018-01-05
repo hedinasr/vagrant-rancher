@@ -1,0 +1,98 @@
+---
+- name: Docker installation for Ubuntu distribution
+  block:
+
+    #- name: Update all packages to the latest version
+    #- apt:
+    #-   upgrade: dist
+    #-   update_cache: yes
+
+  - name: Ensure docker packages are not present
+    apt:
+      state: absent
+      name: "{{ item }}"
+    with_items:
+      - docker
+      - docker-engine
+      - docker.io
+
+  - name: Install package for Docker.io https Docker repository
+    apt:
+      state: latest
+      name: "{{ item }}"
+    with_items:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+
+  - name: Adding Docker official gpg key
+    apt_key:
+      url: "{{ docker_apt_key }}"
+      state: present
+
+  - name: Setting Docker repository depending on arch
+    set_fact:
+      docker_repository: "deb [arch={{ item.apt_arch }}] {{ docker_apt_repository }} {{ ansible_distribution_release }} {{ docker_apt_channel }}"
+    when: ansible_architecture == item.system_arch
+    with_items:
+      - { system_arch: 'x86_64', apt_arch: 'amd64' }
+      - { system_arch: 'arm', apt_arch: 'armhf' }
+
+  - name: Printing Docker repository
+    debug:
+      var: docker_repository
+
+  - name: Adding Docker repository
+    apt_repository:
+      repo: "{{ docker_repository }}"
+      state: present
+      filename: 'docker'
+
+  - name: Setting Docker version 17.03
+    shell: "apt-cache madison docker-ce | grep 17.03 | head -1 | awk '{print $3}'"
+    register: docker_version
+
+  - name: Printing Docker version
+    debug:
+      var: docker_version.stdout
+
+  - name: Install docker-ce
+    apt:
+      name: docker-ce={{ docker_version.stdout }}
+      state: installed
+      update_cache: yes
+
+  - name: Prevent updating of Docker
+    shell: "apt-mark hold docker-ce"
+
+    #- name: Fixing systemd unit for Docker config file
+    #- template:
+    #-   src: docker.service.j2
+    #-   dest: /lib/systemd/system/docker.service
+    #- notify:
+    #-   - reload systemd
+    #- when: inventory_hostname != groups['proxy'][0]
+
+  - name: Flushing handlers
+    meta: flush_handlers
+
+  - name: Templating /etc/docker/daemon.json
+    template:
+      src: daemon.json.j2
+      dest: /etc/docker/daemon.json
+    notify:
+      - restart docker
+
+  - name: Flushing handlers 2
+    meta: flush_handlers
+
+  - name: Getting Docker version
+    shell: "docker --version"
+    register: docker_version
+
+  - name: Printing Docker version
+    debug:
+      var: docker_version
+
+  when: ansible_distribution == "Ubuntu"

@@ -1,0 +1,10 @@
+- name: Configuring apt-proxy on Ubuntu distribution
+  block:
+
+  - name: Templating /etc/apt/apt.conf.d/proxy
+    template:
+      src: proxy.j2
+      dest: /etc/apt/apt.conf.d/proxy
+    when: inventory_hostname != groups['proxy'][0]
+
+  when: ansible_distribution == "Ubuntu"

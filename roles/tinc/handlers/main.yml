@@ -1,0 +1,16 @@
+---
+- name: restart tinc
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+    #- tinc@meshvpn
+    - tinc
+
+- name: reload tinc
+  systemd:
+    name: "{{ item }}"
+    state: reloaded
+  with_items:
+    #- tinc@meshvpn
+    - tinc

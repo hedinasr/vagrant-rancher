@@ -1,0 +1,29 @@
+---
+- name: traefik_ingress_controller | Getting node labels
+  command: "kubectl get nodes -l role=ingress-controller"
+  register: nodes
+  when: inventory_hostname == groups["masters"][0]
+
+- name: traefik_ingress_controller | Printing nodes
+  debug: var=nodes
+  when: inventory_hostname == groups["masters"][0]
+
+- name: traefik_ingress_controller | Labelling proxy nodes with role=ingress_controller
+  command: "kubectl label node {{ item }} role=ingress-controller"
+  with_items:
+    - "{{ groups['proxy'] }}"
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - '"{{ item }}" not in nodes.stdout'
+
+- name: traefik_ingress_controller | RBAC configuration
+  command: "kubectl apply -f https://raw.githubusercontent.com/containous/traefik/master/examples/k8s/traefik-rbac.yaml"
+  when: inventory_hostname == groups["masters"][0]
+
+- name: traefik_ingress_controller | DaemonSet
+  command: "kubectl apply -f https://gist.githubusercontent.com/Ananasr/6af569b662156cc5e62311e17c8bd467/raw/7df3c0c6c8b77fa99e927dcd81ea74bf9447701c/traefik-ds.yaml"
+  when: inventory_hostname == groups["masters"][0]
+  
+- name: traefik_ingress_controller | Deploy Traefik web-ui
+  command: "kubectl apply -f https://raw.githubusercontent.com/containous/traefik/master/examples/k8s/ui.yaml"
+  when: inventory_hostname == groups["masters"][0]

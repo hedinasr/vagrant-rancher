@@ -1,0 +1,25 @@
+version: '2'
+services:
+  letschatapplb:
+    #If you only have 1 host and also created the host in the UI,
+    # you may have to change the port exposed on the host.
+    ports:
+    - 80:80/tcp
+    labels:
+      io.rancher.container.create_agent: 'true'
+      io.rancher.container.agent.role: environmentAdmin
+    image: rancher/lb-service-haproxy:v0.4.2
+  web:
+    labels:
+      io.rancher.container.pull_image: always
+    tty: true
+    image: sdelements/lets-chat
+    links:
+    - database:mongo
+    stdin_open: true
+  database:
+    labels:
+      io.rancher.container.pull_image: always
+    tty: true
+    image: mongo
+    stdin_open: true

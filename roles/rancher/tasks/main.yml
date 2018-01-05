@@ -1,0 +1,93 @@
+---
+- name: Install docker-py
+  pip: name=docker-py
+
+- name: Check if the Rancher server is running
+  command: docker ps -a
+  register: containers
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Setup Rancher server
+  docker_container:
+    name: rancher-server
+    image: rancher/server:stable
+    restart_policy: unless-stopped
+    ports:
+      - "8080:8080"
+  when:
+    - inventory_hostname == groups["masters"][0]
+    - "'rancher-server' not in containers.stdout"
+
+- name: Wait for the Rancher server to start
+  action: command docker logs rancher-server
+  register: rancher_logs
+  until: rancher_logs.stdout.find("Listening on") != 1
+  retries: 30
+  delay: 10
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Echo Rancher's URL
+  debug: msg="Rancher UI at http://{{ ansible_ssh_host }}:8080"
+  when: inventory_hostname == groups["masters"][0]
+
+- name: Install httplib2
+  pip: name=httplib2
+ 
+- name: Get the default project ID
+  action: uri
+    method=GET
+    status_code=200
+    url="http://{{ groups["masters"][0] }}:8080/v1/projects" return_content=yes
+  register: project_id
+  when: inventory_hostname != groups["masters"][0]
+
+- name: Return the registration URL of Rancher server
+  action: uri
+    method=POST
+    status_code=201
+    url="http://{{ groups["masters"][0] }}:8080/v1/registrationtokens?projectId={{ project_id.json['data'][0]['id'] }}" return_content=yes
+  register: rancher_token_url
+  when: inventory_hostname != groups["masters"][0]
+
+- name: Get the registration token
+  action: uri
+    method=GET
+    url={{ rancher_token_url.json['links']['self'] }} return_content=yes
+  register: rancher_token
+  when: inventory_hostname != groups["masters"][0]
+
+- name: Check if rancher-agent is running
+  command: docker ps -a
+  register: containers_hosts
+  when: inventory_hostname != groups["masters"][0]
+
+- name: Register the host machine with the Rancher server
+  docker_container:
+    name: "rancher-agent_"
+    image: "{{ rancher_token.json['image'] }}"
+    privileged: yes
+    detach: no
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/rancher:/var/lib/rancher
+    command: "{{ rancher_token.json['registrationUrl'] }}"
+    state: started
+  when:
+    - inventory_hostname != groups["masters"][0]
+    - "'rancher-agent' not in containers_hosts.stdout"
+
+- name: Debug project_id
+  debug: msg="project_id = {{ project_id.json['data'][0]['id'] }}"
+  when: inventory_hostname != groups["masters"][0]
+
+- name: Debug rancher_token_url
+  debug: msg="rancher_token_url = {{ rancher_token_url.json['links']['self'] }}"
+  when: inventory_hostname != groups["masters"][0]
+
+- name: Debug rancher_token
+  debug: msg="rancher_token= {{ rancher_token.json['registrationUrl'] }}"
+  when: inventory_hostname != groups["masters"][0]
+
+- name: Debug containers_hosts
+  debug: msg="containers_hosts = {{ containers_hosts.stdout }}"
+  when: inventory_hostname != groups["masters"][0]

@@ -1,0 +1,52 @@
+# Setting up all hosts
+- hosts: proxy:masters:workers
+  become: true
+  tasks: [ ]
+
+- hosts: proxy
+  become: true
+  roles:
+    - tinyproxy
+
+# this force reload tinyproxy
+- hosts: proxy
+  become: true
+  tasks:
+    - meta: flush_handlers
+
+# Setting up apt-proxy on master and workers (private ips)
+- hosts: masters:workers
+  become: true
+  roles:
+    - apt-proxy
+
+# Setting mesh vpn using tinc
+- hosts: proxy:masters:workers
+  become: true
+  roles:
+    - tinc
+
+# Proxy is now listening on tinc ip
+- hosts: proxy
+  become: true
+  roles:
+    - tinyproxy
+
+- hosts: proxy
+  become: true
+  tasks:
+    - meta: flush_handlers
+
+# Apt proxy now should use tinc ip
+- hosts: masters:workers
+  become: true
+  roles:
+    - apt-proxy
+
+# Ready to install docker
+- hosts: proxy:masters:workers
+  become: true
+  roles:
+    - common
+    - docker
+

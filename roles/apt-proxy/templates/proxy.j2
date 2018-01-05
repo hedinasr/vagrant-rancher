@@ -1,0 +1,5 @@
+{% if ansible_tun0 is defined %}
+Acquire::http::Proxy "http://{{ hostvars[groups['proxy'][0]]['vpn_ip'] }}:8888";
+{% else %}
+Acquire::http::Proxy "http://{{ hostvars[groups['proxy'][0]]['ansible_eth1']['ipv4']['address'] }}:8888";
+{% endif %}

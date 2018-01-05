@@ -1,0 +1,10 @@
+---
+- name: Common system settings
+  block:
+
+  - name: Install pip
+    apt:
+      state: present
+      name: python-pip
+
+  when: ansible_distribution == "Ubuntu"

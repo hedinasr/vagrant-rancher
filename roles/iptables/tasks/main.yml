@@ -1,0 +1,16 @@
+---
+- name: Installing iptables-persistant
+  apt:
+    name: iptables-persistent
+    state: latest
+
+- name: Creating iptables configuration directory
+  file:
+    path: /etc/iptables
+    state: directory
+
+- name: Creating iptables rules.v4
+  template:
+    src: rules.v4.j2
+    dest: /etc/iptables/rules.v4
+  notify: Restart iptables
